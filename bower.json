@@ -1,0 +1,17 @@
+{
+  "name": "angular-oauth-google",
+  "main": "angular-oauth-google.js",
+  "version": "0.0.0",
+  "homepage": "https://github.com/eqot/angular-oauth-google",
+  "authors": [
+    "Ikuo Terado <eqobar@gmail.com>"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
