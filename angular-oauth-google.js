@@ -1,45 +1,52 @@
-/*global gapi */
 
-'use strict';
+(function(window, angular, undefined) {'use strict';
 
-angular.module('AngularOauthGoogle', [])
-  .service('oauthGoogle', function Oauthgoogle($rootScope) {
+var oauthGoogleModule = angular.module('AngularOauthGoogle', [])
 
-    var timer = setInterval(function () {
-      if (gapi) {
-        clearInterval(timer);
-        timer = null;
+  .controller('oauthGoogleCtrl', function($scope) {
 
-        initialize();
+    $scope.account = '';
+
+    var isReady = false;
+    var isAuthenticated = false;
+
+    initialize();
+
+    function initialize () {
+      var firstScriptTag = document.getElementsByTagName('script')[0];
+
+      loadScript('http://www.google.com/jsapi');
+      loadScript('https://apis.google.com/js/client.js?onload=onJSClientLoad');
+
+      function loadScript (url) {
+        var tag = document.createElement('script');
+        tag.src = url;
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
       }
-    }, 100);
-
-    var authenticated = false;
-
-    var OAUTH2_CLIENT_ID = '@@google_crednetial';
-    var OAUTH2_SCOPES = [
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/youtube.readonly'
-      // 'https://www.googleapis.com/auth/yt-analytics.readonly'
-    ];
-
-    function initialize (scope) {
-      gapi.auth.init(function() {
-        setTimeout(signIn, 1);
-      });
     }
 
-    function signIn (immediate) {
-      if (authenticated) {
+    window.onJSClientLoad = function () {
+      isReady = true;
+    };
+
+    $scope.signin = function (clientId, clientScope, immediate) {
+      if (!isReady || isAuthenticated) {
         return;
       }
 
+      clientId = '@@google_crednetial';
+      clientScope = [
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/youtube.readonly'
+        // 'https://www.googleapis.com/auth/yt-analytics.readonly'
+      ];
+
       gapi.auth.authorize({
-        client_id: OAUTH2_CLIENT_ID,
-        scope: OAUTH2_SCOPES,
+        client_id: clientId,
+        scope: clientScope,
         immediate: immediate || true
       }, handleAuthResult);
-    }
+    };
 
     function handleAuthResult (authResult) {
       console.log(authResult);
@@ -47,7 +54,7 @@ angular.module('AngularOauthGoogle', [])
       if (authResult) {
         console.log('Authenticated.');
 
-        authenticated = true;
+        isAuthenticated = true;
 
         loadAPIClientInterfaces();
       } else {
@@ -56,69 +63,17 @@ angular.module('AngularOauthGoogle', [])
     }
 
     function loadAPIClientInterfaces() {
-      // gapi.client.load('youtube', 'v3', function() {
-      //   gapi.client.load('youtubeAnalytics', 'v1', function() {
-      //     getUserChannel();
-      //   });
-      // });
-
-      // getUserInfo();
-
       gapi.client.load('oauth2', 'v2', function() {
         var request = gapi.client.oauth2.userinfo.get();
         request.execute(function (res) {
           if (res.email) {
-            $rootScope.account = res.email;
-
-            $rootScope.accountMenu = [
-              {label: 'Setting', url: '#'},
-              {divider: true},
-              {label: 'Sign out', url: '#'},
-            ];
-
-            $rootScope.$broadcast('oauth.authenticated');
-
-            $rootScope.$apply();
+            $scope.account = res.email;
+            $scope.$apply();
           }
         });
       });
     }
 
-    function getUserInfo () {
-      gapi.client.load('plus','v1', function(){
-        var request = gapi.client.plus.people.list({
-          'userId': 'me',
-          'collection': 'visible'
-        });
-        request.execute(function(resp) {
-          console.log('Num people visible:' + resp.totalItems);
-        });
-      });
-    }
-
-    function getUserChannel () {
-      console.log('getUserChannel()');
-
-      var request = gapi.client.youtube.channels.list({
-        mine: true,
-        part: 'id,contentDetails'
-      });
-
-      request.execute(function(response) {
-        console.log(response);
-        if ('error' in response) {
-          // displayMessage(response.error.message);
-          console.log(response.error.message);
-        } else {
-          // channelId = response.items[0].id;
-          // var uploadsListId = response.items[0].contentDetails.relatedPlaylists.uploads;
-          // getUploadsList(uploadsListId);
-        }
-      });
-    }
-
-    return {
-      signIn: signIn
-    };
-
   });
+
+})(window, window.angular);
