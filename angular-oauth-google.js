@@ -1,14 +1,17 @@
 
 (function(window, angular, undefined) {'use strict';
 
-var oauthGoogleModule = angular.module('AngularOauthGoogle', [])
+angular.module('AngularOauthGoogle', [])
+  .service('oauthGoogleService', function ($rootScope) {
 
-  .controller('oauthGoogleCtrl', function($scope) {
-
-    $scope.account = '';
+    $rootScope.account = '';
 
     var isReady = false;
+    var triedSignedIn = false;
     var isAuthenticated = false;
+
+    var id = null;
+    var scopes = null;
 
     initialize();
 
@@ -27,26 +30,32 @@ var oauthGoogleModule = angular.module('AngularOauthGoogle', [])
 
     window.onJSClientLoad = function () {
       isReady = true;
+
+      if (triedSignedIn) {
+        signIn();
+      }
     };
 
-    $scope.signin = function (clientId, clientScope, immediate) {
+    function signIn (immediate, clientId, clientScopes) {
+      triedSignedIn = true;
+
+      if (clientId) {
+        id = clientId;
+      }
+      if (clientScopes) {
+        scopes = clientScopes;
+      }
+
       if (!isReady || isAuthenticated) {
         return;
       }
 
-      clientId = '@@google_crednetial';
-      clientScope = [
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/youtube.readonly'
-        // 'https://www.googleapis.com/auth/yt-analytics.readonly'
-      ];
-
       gapi.auth.authorize({
-        client_id: clientId,
-        scope: clientScope,
+        client_id: id,
+        scope: scopes,
         immediate: immediate || true
       }, handleAuthResult);
-    };
+    }
 
     function handleAuthResult (authResult) {
       console.log(authResult);
@@ -67,13 +76,25 @@ var oauthGoogleModule = angular.module('AngularOauthGoogle', [])
         var request = gapi.client.oauth2.userinfo.get();
         request.execute(function (res) {
           if (res.email) {
-            $scope.account = res.email;
-            $scope.$apply();
+            $rootScope.account = res.email;
+            $rootScope.$apply();
           }
         });
       });
     }
 
+    return {
+      signIn: signIn
+    };
+  })
+
+  .directive('oauthGoogle', function (oauthGoogleService) {
+    return {
+      restrict: 'E',
+      link: function (scope, element, attrs) {
+        oauthGoogleService.signIn(true, attrs.id, attrs.scopes.split(','));
+      }
+    };
   });
 
 })(window, window.angular);
