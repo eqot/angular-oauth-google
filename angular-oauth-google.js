@@ -18,7 +18,7 @@ angular.module('AngularOauthGoogle', [])
     function initialize () {
       var firstScriptTag = document.getElementsByTagName('script')[0];
 
-      loadScript('http://www.google.com/jsapi');
+      loadScript('https://www.google.com/jsapi');
       loadScript('https://apis.google.com/js/client.js?onload=onJSClientLoad');
 
       function loadScript (url) {
